@@ -4,11 +4,20 @@
 # you can do whatever you want with this stuff. If we meet some day, and you
 # think this stuff is worth it, you can buy us some beer in return. TÅGEKAMMERET
 
+import os
+import ast
 from setuptools import setup, find_packages
-import emailtunnel
 
 
-headline = emailtunnel.__doc__.split('\n', 1)[0].rstrip('.')
+# Get the docstring out without importing the file
+init_filename = os.path.join(
+    os.path.dirname(__file__), 'emailtunnel/__init__.py')
+with open(init_filename) as fp:
+    tree = ast.parse(fp.read())
+    long_description = tree.body[0].value.s
+
+
+headline = long_description.split('\n', 1)[0].rstrip('.')
 
 
 setup(
@@ -16,7 +25,7 @@ setup(
     version='0.1',
     packages=find_packages(include=['emailtunnel', 'emailtunnel.*']),
     description=headline,
-    long_description=emailtunnel.__doc__,
+    long_description=long_description,
     author='https://github.com/Mortal',
     url='https://github.com/Mortal/emailtunnel',
     include_package_data=True,
