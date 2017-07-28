@@ -179,6 +179,12 @@ class Message(object):
         self.message['Received'] = value
         self.message._headers += headers
 
+    def prefix_received_lines(self):
+        for i in range(len(self.message._headers)):
+            k, v = self.message._headers[i]
+            if k.lower() == 'received':
+                self.message._headers[i] = ('X-Received', v)
+
     def add_header(self, key, value):
         self.message[key] = value
 
@@ -608,6 +614,9 @@ class SMTPForwarder(SMTPReceiver, RelayMixin):
         for field, value in self.get_extra_headers(envelope, group):
             envelope.message.set_unique_header(field, value)
 
+    def prefix_received_lines(self, envelope):
+        envelope.message.prefix_received_lines()
+
     def handle_envelope(self, envelope, peer):
         if self.detect_mail_loop(envelope):
             self.log_mail_loop(envelope)
@@ -627,6 +636,8 @@ class SMTPForwarder(SMTPReceiver, RelayMixin):
         new_subject = self.translate_subject(envelope)
         if new_subject is not None:
             envelope.message.subject = new_subject
+
+        self.prefix_received_lines(envelope)
 
         # Remove falsy recipients (empty string or None)
         recipients = [r for r in recipients if r]
