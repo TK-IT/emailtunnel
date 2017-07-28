@@ -461,6 +461,12 @@ class RelayMixin(object):
 
 
 class SMTPForwarder(SMTPReceiver, RelayMixin):
+    my_hostname = 'emailtunnel.local'
+    'Used in Received:-header.'
+    max_my_hostname_count = 3
+    '''If my_hostname is found more than this number of times,
+    reject as mail loop.'''
+
     def __init__(self, receiver_host, receiver_port, relay_host, relay_port):
         self.relay_host = relay_host
         self.relay_port = relay_port
@@ -529,6 +535,16 @@ class SMTPForwarder(SMTPReceiver, RelayMixin):
         """
         return envelope.mailfrom
 
+    def count_my_hostname(self, envelope):
+        count = 0
+        for key, value in envelope.message.header_items():
+            if self.my_hostname in str(value):
+                count += 1
+        return count
+
+    def detect_mail_loop(self, envelope):
+        return self.count_my_hostname(envelope) > max_my_hostname_count
+
     def get_envelope_received(self, envelope, peer, recipients=None):
         """Compute the value of the Received:-header to add.
 
@@ -541,7 +557,7 @@ class SMTPForwarder(SMTPReceiver, RelayMixin):
 
         ipaddr, port = peer
         return 'from %s\nby %s\nfor %s;\n%s' % (
-            ipaddr, 'emailtunnel.local',
+            ipaddr, self.my_hostname,
             ', '.join('<%s>' % rcpt for rcpt in envelope.rcpttos),
             datetime.datetime.utcnow().strftime(
                 '%a, %e %b %Y %T +0000 (UTC)'),
@@ -563,6 +579,12 @@ class SMTPForwarder(SMTPReceiver, RelayMixin):
         logger.error(repr(exn))
 
     def handle_invalid_recipient(self, envelope, exn):
+        pass
+
+    def log_mail_loop(self, envelope):
+        logger.error('Mail loop detected')
+
+    def handle_mail_loop(self, envelope):
         pass
 
     def get_extra_headers(self, envelope, group):
@@ -587,6 +609,11 @@ class SMTPForwarder(SMTPReceiver, RelayMixin):
             envelope.message.set_unique_header(field, value)
 
     def handle_envelope(self, envelope, peer):
+        if self.detect_mail_loop(envelope):
+            self.log_mail_loop(envelope)
+            self.handle_mail_loop(envelope)
+            return '550 Mail loop detected'
+
         original_envelope = copy.deepcopy(envelope)
         try:
             recipients = self.get_envelope_recipients(envelope)
