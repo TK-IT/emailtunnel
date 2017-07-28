@@ -549,7 +549,7 @@ class SMTPForwarder(SMTPReceiver, RelayMixin):
         return count
 
     def detect_mail_loop(self, envelope):
-        return self.count_my_hostname(envelope) > max_my_hostname_count
+        return self.count_my_hostname(envelope) > self.max_my_hostname_count
 
     def get_envelope_received(self, envelope, peer, recipients=None):
         """Compute the value of the Received:-header to add.
