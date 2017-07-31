@@ -472,6 +472,10 @@ class SMTPForwarder(SMTPReceiver, RelayMixin):
     max_my_hostname_count = 3
     '''If my_hostname is found more than this number of times,
     reject as mail loop.'''
+    should_prefix_received_lines = False
+    '''When set to True, 'Received' headers are renamed to 'X-Received'
+    headers, which can be useful to work around relaying MTAs that have
+    a too low hop count.'''
 
     def __init__(self, receiver_host, receiver_port, relay_host, relay_port):
         self.relay_host = relay_host
@@ -615,7 +619,8 @@ class SMTPForwarder(SMTPReceiver, RelayMixin):
             envelope.message.set_unique_header(field, value)
 
     def prefix_received_lines(self, envelope):
-        envelope.message.prefix_received_lines()
+        if self.should_prefix_received_lines:
+            envelope.message.prefix_received_lines()
 
     def handle_envelope(self, envelope, peer):
         if self.detect_mail_loop(envelope):
