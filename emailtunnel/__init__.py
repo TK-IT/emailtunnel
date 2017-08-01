@@ -597,13 +597,32 @@ class SMTPForwarder(SMTPReceiver, RelayMixin):
     def handle_mail_loop(self, envelope):
         pass
 
+    def get_dkim_protected_headers(self, envelope):
+        try:
+            dkim_signature = envelope.message.get_unique_header(
+                'DKIM-Signature')
+        except KeyError:
+            return ()
+        mo = re.search(r'\bh=([^ \n\t;]*)', dkim_signature)
+        if not mo:
+            return ()
+        return mo.group(1).split(':')
+        # DKIM-Signature: v=1; a=rsa-sha256; d=admin.mobilepay.dk;s=mobpayDK;
+        # c=relaxed/relaxed; q=dns/txt; t=1500881427;
+        # h=list-unsubscribe:reply-to:...:subject:mime-version:content-type;
+        # bh=<something long>;
+        # b=<something long>
+
     def get_extra_headers(self, envelope, group):
         headers = []
         fields = 'Sender List-Id List-Unsubscribe List-Help List-Subscribe'
         # Call get_sender_header, get_list_id_header,
         # get_list_unsubscribe_header, get_list_help_header,
         # get_list_subscribe_header
+        dkim_protected = self.get_dkim_protected_headers(envelope)
         for h in fields.split():
+            if h.lower() in dkim_protected:
+                continue
             method_name = 'get_%s_header' % h.lower().replace('-', '_')
             try:
                 f = getattr(self, method_name)
