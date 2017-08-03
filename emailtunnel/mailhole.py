@@ -13,6 +13,11 @@ from emailtunnel import RelayMixin
 class MailholeRelayMixin(RelayMixin):
     mailhole_pattern = r'^.*@(hotmail|msn|live|outlook)\.\w+$'
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.get_mailhole_key():
+            print("You must set MAILHOLE_KEY env var!")
+
     def get_mailhole_key(self):
         return os.getenv('MAILHOLE_KEY')
 
