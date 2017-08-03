@@ -606,7 +606,7 @@ class SMTPForwarder(SMTPReceiver, RelayMixin):
         mo = re.search(r'\bh=([^ \n\t;]*)', dkim_signature)
         if not mo:
             return ()
-        return mo.group(1).split(':')
+        return mo.group(1).lower().split(':')
         # DKIM-Signature: v=1; a=rsa-sha256; d=admin.mobilepay.dk;s=mobpayDK;
         # c=relaxed/relaxed; q=dns/txt; t=1500881427;
         # h=list-unsubscribe:reply-to:...:subject:mime-version:content-type;
