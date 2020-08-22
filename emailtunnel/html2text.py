@@ -672,8 +672,6 @@ class HTML2Text(HTMLParser.HTMLParser):
                 self.o("[")
                 self.maybe_automatic_link = None
 
-        if not self.code and not self.pre:
-            data = escape_md_section(data, snob=self.escape_snob)
         self.o(data, 1)
 
     def unknown_decl(self, data): pass
