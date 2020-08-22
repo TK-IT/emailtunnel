@@ -22,7 +22,7 @@ headline = long_description.split('\n', 1)[0].rstrip('.')
 
 setup(
     name='emailtunnel',
-    version='0.2',
+    version='0.3',
     packages=find_packages(include=['emailtunnel', 'emailtunnel.*']),
     description=headline,
     long_description=long_description,
